@@ -1,5 +1,13 @@
 # 😊 Face The Facts: AI-Powered Employee Wellbeing Monitoring & Fatigue Detection System
+## 🌐 Live Demo
 
+🚀 **Try the Application Here**
+
+**🔗 Live Website:** https://facethefacts.onrender.com/
+
+> **Note:** This application is deployed on **Render's Free Tier**. If the service has been idle, the first request may take **30–60 seconds** to load while the server wakes up.
+
+---
 ## 📑 Table of Contents
 
 1. [📋 Project Overview](#-overview)
