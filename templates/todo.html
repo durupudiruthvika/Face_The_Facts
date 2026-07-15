@@ -1,0 +1,54 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="row">
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">📅 Add New Task</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Task Description</label>
+                        <input type="text" name="task" class="form-control" placeholder="e.g., Submit Assignment" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Due Date</label>
+                        <input type="date" name="due_date" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Add to Calendar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <h3 class="mb-3" style="color: #2c3e50;">Your Schedule</h3>
+        
+        {% if todos %}
+            <div class="list-group shadow-sm">
+                {% for todo in todos %}
+                <div class="list-group-item d-flex justify-content-between align-items-center {{ 'bg-light text-muted text-decoration-line-through' if todo.is_completed else '' }}">
+                    <div class="d-flex align-items-center">
+                        <a href="{{ url_for('toggle_todo', id=todo.id) }}" class="btn btn-sm {{ 'btn-success' if todo.is_completed else 'btn-outline-secondary' }} me-3 rounded-circle">
+                            <i class="bi bi-check"></i>
+                        </a>
+                        
+                        <div>
+                            <h5 class="mb-0">{{ todo.task }}</h5>
+                            <small class="text-primary"><i class="bi bi-calendar-event"></i> {{ todo.due_date }}</small>
+                        </div>
+                    </div>
+                    
+                    <a href="{{ url_for('delete_todo', id=todo.id) }}" class="text-danger">
+                        <i class="bi bi-trash"></i>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-info">No tasks planned. Enjoy your free time! ☕</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

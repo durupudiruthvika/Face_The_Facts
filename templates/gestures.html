@@ -1,0 +1,141 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container text-center">
+    <h2 class="fw-bold text-primary mb-3">👋 Gesture Control Mode</h2>
+    <p class="text-muted">Control this page without touching your mouse.</p>
+
+    <!-- Feedback Badge -->
+    <div id="gestureStatus" class="badge bg-secondary fs-4 mb-4 px-4 py-2 shadow-sm">
+        Waiting for hand...
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8 position-relative">
+            <div class="card shadow-lg border-0 overflow-hidden">
+                <!-- Video is hidden, we draw on canvas -->
+                <video id="inputVideo" class="d-none" autoplay playsinline></video>
+                <canvas id="outputCanvas" width="640" height="360" class="w-100"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Long Content to Test Scrolling -->
+    <div class="row mt-5 text-start">
+        <div class="col-md-8 mx-auto">
+            <h3>📜 Scroll Test Content</h3>
+            <p class="lead">Raise 1 finger to scroll down. Raise 2 fingers to scroll up.</p>
+            {% for i in range(20) %}
+                <p>This is filler paragraph number {{ i + 1 }}. The quick brown fox jumps over the lazy dog. 
+                FaceTheFacts helps you work healthier by monitoring your wellbeing metrics. 
+                Use gestures to navigate this page effortlessly.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- MediaPipe Hands -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+<script>
+    const videoElement = document.getElementById('inputVideo');
+    const canvasElement = document.getElementById('outputCanvas');
+    const canvasCtx = canvasElement.getContext('2d');
+    const statusBadge = document.getElementById('gestureStatus');
+
+    let lastGesture = "None";
+    let navCooldown = false;
+
+    function onResults(results) {
+        canvasCtx.save();
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+            const landmarks = results.multiHandLandmarks[0];
+            
+            // Draw Hand Skeleton
+            drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: '#00FF00', lineWidth: 2});
+            drawLandmarks(canvasCtx, landmarks, {color: '#FF0000', lineWidth: 1});
+
+            // --- GESTURE LOGIC ---
+            const fingers = countFingers(landmarks);
+            handleGesture(fingers);
+        } else {
+            statusBadge.innerText = "Show Hand 👋";
+            statusBadge.className = "badge bg-secondary fs-4 mb-4 px-4 py-2";
+        }
+        canvasCtx.restore();
+    }
+
+    function countFingers(lm) {
+        // Landmarks: 8=IndexTip, 6=IndexPIP, 12=MidTip, 10=MidPIP, etc.
+        let count = 0;
+        
+        // Index (If Tip is higher than PIP) - Note: Y goes DOWN in canvas (0 is top)
+        if (lm[8].y < lm[6].y) count++;
+        // Middle
+        if (lm[12].y < lm[10].y) count++;
+        // Ring
+        if (lm[16].y < lm[14].y) count++;
+        // Pinky
+        if (lm[20].y < lm[18].y) count++;
+        
+        // Thumb (X-axis check depending on hand side, simplified here)
+        // We'll ignore thumb for basic 1-2-3 count to be robust
+        
+        return count;
+    }
+
+    function handleGesture(count) {
+        if (count === 1) {
+            // 1 Finger: Scroll Down
+            statusBadge.innerText = "👇 Scrolling Down";
+            statusBadge.className = "badge bg-primary fs-4 mb-4 px-4 py-2";
+            window.scrollBy(0, 10); // Smooth scroll speed
+        } 
+        else if (count === 2) {
+            // 2 Fingers: Scroll Up
+            statusBadge.innerText = "👆 Scrolling Up";
+            statusBadge.className = "badge bg-info fs-4 mb-4 px-4 py-2";
+            window.scrollBy(0, -10);
+        } 
+        else if (count === 3) {
+            // 3 Fingers: Navigate (Back/Dashboard)
+            statusBadge.innerText = "🔙 Go Dashboard";
+            statusBadge.className = "badge bg-warning text-dark fs-4 mb-4 px-4 py-2";
+            
+            if (!navCooldown) {
+                navCooldown = true;
+                setTimeout(() => {
+                    window.location.href = "{{ url_for('dashboard') }}";
+                }, 1000); // 1 sec delay to confirm
+            }
+        } 
+        else if (count >= 4) {
+            statusBadge.innerText = "✋ Stop";
+            statusBadge.className = "badge bg-danger fs-4 mb-4 px-4 py-2";
+        }
+    }
+
+    // Init MediaPipe Hands
+    const hands = new Hands({locateFile: (file) => {
+        return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+    }});
+    hands.setOptions({
+        maxNumHands: 1,
+        modelComplexity: 1,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+    });
+    hands.onResults(onResults);
+
+    const camera = new Camera(videoElement, {
+        onFrame: async () => { await hands.send({image: videoElement}); },
+        width: 640, height: 360
+    });
+    camera.start();
+</script>
+{% endblock %}

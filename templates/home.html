@@ -1,0 +1,172 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<!-- HERO SECTION -->
+<div class="row align-items-center py-5 mb-5">
+    <div class="col-lg-6">
+        <span class="badge bg-primary bg-opacity-10 text-primary mb-3 px-3 py-2 rounded-pill fw-bold">
+            ✨ AI-Powered Workplace Wellness
+        </span>
+        <h1 class="display-4 fw-bold text-dark mb-4">
+            Don't just work hard. <br> Work <span class="text-primary">healthier.</span>
+        </h1>
+        <p class="lead text-muted mb-5">
+            FaceTheFacts is an intelligent background tool that monitors your stress, posture, and eye health in real-time. Private, secure, and powered by Google Gemini AI.
+        </p>
+        <div class="d-flex gap-3">
+            <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg px-5 rounded-pill shadow-sm fw-bold">
+                Get Started Free
+            </a>
+            <a href="#how-it-works" class="btn btn-outline-secondary btn-lg px-4 rounded-pill">
+                How it Works
+            </a>
+        </div>
+        <div class="mt-4 text-muted small">
+            <i class="bi bi-shield-lock-fill text-success"></i> 100% Privacy Focused. No video is ever stored.
+        </div>
+    </div>
+    <div class="col-lg-6 text-center mt-5 mt-lg-0">
+        <div class="position-relative">
+            <!-- Abstract representation of the dashboard -->
+            <div class="card shadow-lg border-0 rounded-4 p-2 bg-light" style="transform: rotate(-2deg);">
+                <div class="card-body bg-white rounded-4 text-start p-4">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="bg-success rounded-circle p-3 text-white me-3"><i class="bi bi-emoji-smile fs-4"></i></div>
+                        <div>
+                            <h5 class="fw-bold mb-0">Stress Level: Low</h5>
+                            <small class="text-muted">Live Analysis • 10:42 AM</small>
+                        </div>
+                    </div>
+                    <div class="progress mb-3" style="height: 8px;">
+                        <div class="progress-bar bg-success" style="width: 85%"></div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-light text-dark border">Blinks: 42</span>
+                        <span class="badge bg-light text-dark border">Posture: Good</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- PROBLEM SECTION -->
+<div class="row justify-content-center py-5 bg-white rounded-4 shadow-sm mb-5">
+    <div class="col-md-8 text-center mb-5">
+        <h2 class="fw-bold">The Invisible Workplace Crisis</h2>
+        <p class="text-muted">Burnout doesn't happen overnight. It happens blink by blink.</p>
+    </div>
+    <div class="col-md-4 text-center px-4">
+        <div class="mb-3 text-danger"><i class="bi bi-eye-slash fs-1"></i></div>
+        <h5>Digital Eye Strain</h5>
+        <p class="text-muted small">Staring at screens reduces blink rates by 60%, leading to dry eyes and headaches.</p>
+    </div>
+    <div class="col-md-4 text-center px-4 border-start border-end">
+        <div class="mb-3 text-warning"><i class="bi bi-battery-half fs-1"></i></div>
+        <h5>Silent Burnout</h5>
+        <p class="text-muted small">Micro-stressors accumulate throughout the day without you noticing until it's too late.</p>
+    </div>
+    <div class="col-md-4 text-center px-4">
+        <div class="mb-3 text-info"><i class="bi bi-person-wheelchair fs-1"></i></div>
+        <h5>Poor Ergonomics</h5>
+        <p class="text-muted small">Slouching and sitting too close to screens causes chronic back and neck pain.</p>
+    </div>
+</div>
+
+<!-- HOW IT WORKS SECTION -->
+<div id="how-it-works" class="py-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold">How FaceTheFacts Helps You</h2>
+    </div>
+    <div class="row g-4">
+        <!-- Step 1 -->
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-4 text-center">
+                    <span class="badge bg-primary rounded-circle p-3 fs-4 mb-3">1</span>
+                    <h4>Biometric Calibration</h4>
+                    <p class="text-muted">
+                        Everyone is different. Upon registration, our AI learns <b>your</b> specific eye shape and blink patterns for 99% accuracy.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <!-- Step 2 -->
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-4 text-center">
+                    <span class="badge bg-primary rounded-circle p-3 fs-4 mb-3">2</span>
+                    <h4>Live Monitoring</h4>
+                    <p class="text-muted">
+                        While you work, we track blinks, posture, lighting, and emotion. We alert you via <b>Smart Notifications</b> only when necessary.
+                    </p>
+                </div>
+            </div>
+        </div>
+        <!-- Step 3 -->
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm">
+                <div class="card-body p-4 text-center">
+                    <span class="badge bg-primary rounded-circle p-3 fs-4 mb-3">3</span>
+                    <h4>AI Coaching</h4>
+                    <p class="text-muted">
+                        At the end of a session, Google Gemini generates a <b>Personalized PDF Report</b> with actionable medical & productivity tips.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- FEATURES GRID -->
+<div class="row py-5 mt-5">
+    <div class="col-lg-6 mb-4">
+        <h2 class="fw-bold mb-4">More than just a tracker.</h2>
+        
+        <div class="d-flex mb-4">
+            <div class="text-primary me-3"><i class="bi bi-check-circle-fill fs-4"></i></div>
+            <div>
+                <h5 class="fw-bold">Privacy First Architecture</h5>
+                <p class="text-muted">Video is processed in your browser's RAM. No images are ever sent to our servers or stored in a database.</p>
+            </div>
+        </div>
+        
+        <div class="d-flex mb-4">
+            <div class="text-primary me-3"><i class="bi bi-check-circle-fill fs-4"></i></div>
+            <div>
+                <h5 class="fw-bold">Work Pattern Analysis</h5>
+                <p class="text-muted">We analyze mouse travel distance and keyboard intensity to correlate high workload with high stress.</p>
+            </div>
+        </div>
+
+        <div class="d-flex">
+            <div class="text-primary me-3"><i class="bi bi-check-circle-fill fs-4"></i></div>
+            <div>
+                <h5 class="fw-bold">Zen Mode Intervention</h5>
+                <p class="text-muted">Feeling overwhelmed? Activate Zen Mode for a guided 4-7-8 breathing exercise to reset your nervous system.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card bg-primary text-white rounded-4 p-4 text-center h-100 d-flex flex-column justify-content-center">
+            <h3>Ready to improve your focus?</h3>
+            <p class="mb-4 opacity-75">Join other students and professionals preventing burnout today.</p>
+            <div>
+                <a href="{{ url_for('register') }}" class="btn btn-light btn-lg rounded-pill fw-bold text-primary px-5">Create Free Account</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- FOOTER -->
+<div class="container border-top mt-5 py-4 text-center text-muted small">
+    <p class="mb-1">&copy; 2025 FaceTheFacts Project. Built with Flask, OpenCV, and Google Gemini.</p>
+    <p>
+        <a href="{{ url_for('home') }}" class="text-decoration-none text-secondary me-2">Home</a> | 
+        <a href="{{ url_for('manager_dashboard') }}" class="text-decoration-none text-secondary ms-2">
+            <i class="bi bi-lock-fill"></i> Admin Portal
+        </a>
+    </p>
+</div>
+
+{% endblock %}

@@ -1,0 +1,192 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <h2 class="fw-bold text-primary">👁️ Eye Calibration</h2>
+            <p class="text-muted">Let's teach the AI to recognize <b>your</b> eyes.</p>
+            
+            <div class="card shadow-lg border-0 rounded-4 mt-4">
+                <div class="card-body p-0 bg-black rounded-4 position-relative">
+                    <!-- Camera Feed -->
+                    <video id="inputVideo" class="d-none" autoplay playsinline></video>
+                    <canvas id="outputCanvas" width="640" height="480" style="max-width: 100%; border-radius: 15px;"></canvas>
+                    
+                    <!-- Instructions Overlay -->
+                    <div class="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-center align-items-center bg-dark bg-opacity-75 text-white" id="overlayContent">
+                        <h1 id="stepTitle" class="fw-bold mb-3">Step 1</h1>
+                        <p id="stepDesc" class="lead mb-4">Relax and look at the camera naturally.</p>
+                        <button id="actionBtn" class="btn btn-lg btn-primary px-5 rounded-pill">Start Calibration</button>
+                    </div>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="progress" style="height: 5px;">
+                    <div id="progressBar" class="progress-bar bg-success" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="mt-4">
+                <div class="row">
+                    <div class="col-6 text-end border-end">
+                        <small>Live EAR</small>
+                        <h4 id="liveEAR">0.00</h4>
+                    </div>
+                    <div class="col-6 text-start">
+                        <small>Calculated Threshold</small>
+                        <h4 id="calcThreshold" class="text-muted">--</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Logic Script -->
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+<script>
+    // 1. Setup Variables
+    const videoElement = document.getElementById('inputVideo');
+    const canvasElement = document.getElementById('outputCanvas');
+    const canvasCtx = canvasElement.getContext('2d');
+    const stepTitle = document.getElementById('stepTitle');
+    const stepDesc = document.getElementById('stepDesc');
+    const actionBtn = document.getElementById('actionBtn');
+    const progressBar = document.getElementById('progressBar');
+    const liveEAR = document.getElementById('liveEAR');
+    const calcThresholdDisplay = document.getElementById('calcThreshold');
+
+    let currentEAR = 0;
+    let openEyeValues = [];
+    let closedEyeValues = [];
+    let step = 0; // 0=Start, 1=Measuring Open, 2=Measuring Closed, 3=Done
+
+    // 2. Helper Functions (Same as monitor.js)
+    function getDistance(p1, p2) {
+        return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+    }
+
+    function calculateEAR(landmarks, indices) {
+        const p1 = landmarks[indices[0]];
+        const p2 = landmarks[indices[1]];
+        const p3 = landmarks[indices[2]];
+        const p4 = landmarks[indices[3]];
+        const p5 = landmarks[indices[4]];
+        const p6 = landmarks[indices[5]];
+        return (getDistance(p2, p6) + getDistance(p3, p5)) / (2.0 * getDistance(p1, p4));
+    }
+
+    function onResults(results) {
+        canvasCtx.save();
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+        if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+            const landmarks = results.multiFaceLandmarks[0];
+            const LEFT_EYE = [362, 385, 387, 263, 373, 380];
+            const RIGHT_EYE = [33, 160, 158, 133, 153, 144];
+            
+            const left = calculateEAR(landmarks, LEFT_EYE);
+            const right = calculateEAR(landmarks, RIGHT_EYE);
+            currentEAR = (left + right) / 2.0;
+            liveEAR.innerText = currentEAR.toFixed(3);
+            
+            // Collection Logic
+            if (step === 1) openEyeValues.push(currentEAR);
+            if (step === 2) closedEyeValues.push(currentEAR);
+        }
+        canvasCtx.restore();
+    }
+
+    // 3. Calibration Workflow
+    actionBtn.addEventListener('click', () => {
+        if (step === 0) {
+            // Start Step 1: Open Eyes
+            step = 1;
+            stepTitle.innerText = "Keep Eyes Open";
+            stepDesc.innerText = "Hold steady for 3 seconds...";
+            actionBtn.style.display = "none";
+            
+            let progress = 0;
+            let interval = setInterval(() => {
+                progress += 10;
+                progressBar.style.width = progress/3 + "%"; // Scale to 33%
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    nextStep();
+                }
+            }, 30); // 3 seconds total
+        } 
+        else if (step === 3) {
+            // Save and Finish
+            const avgOpen = openEyeValues.reduce((a, b) => a + b) / openEyeValues.length;
+            const avgClosed = closedEyeValues.reduce((a, b) => a + b) / closedEyeValues.length;
+            
+            // The magic formula: Midpoint between open and closed
+            const newThreshold = (avgOpen + avgClosed) / 2;
+            
+            // Send to Backend
+            fetch('/api/save_calibration', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ threshold: newThreshold })
+            }).then(() => {
+                window.location.href = "{{ url_for('dashboard') }}";
+            });
+        }
+    });
+
+    function nextStep() {
+        if (step === 1) {
+            // Prepare Step 2
+            step = 2; // Start measuring closed
+            stepTitle.innerText = "Close Your Eyes";
+            stepDesc.innerText = "Close them gently for 3 seconds...";
+            // Reset data arrays for cleanliness
+            closedEyeValues = []; 
+            
+            let progress = 0;
+            let interval = setInterval(() => {
+                progress += 10;
+                progressBar.style.width = (33 + progress/3) + "%"; 
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    finishCalibration();
+                }
+            }, 30);
+        }
+    }
+
+    function finishCalibration() {
+        step = 3;
+        const avgOpen = openEyeValues.reduce((a, b) => a + b) / openEyeValues.length;
+        const avgClosed = closedEyeValues.reduce((a, b) => a + b) / closedEyeValues.length;
+        const finalThreshold = (avgOpen + avgClosed) / 2;
+        
+        stepTitle.innerText = "Success!";
+        stepDesc.innerHTML = `Your Open EAR: ${avgOpen.toFixed(2)}<br>Your Closed EAR: ${avgClosed.toFixed(2)}<br><b>Your Threshold: ${finalThreshold.toFixed(2)}</b>`;
+        calcThresholdDisplay.innerText = finalThreshold.toFixed(3);
+        
+        progressBar.style.width = "100%";
+        progressBar.classList.remove("bg-success");
+        progressBar.classList.add("bg-primary");
+        
+        actionBtn.innerText = "Save & Go to Dashboard";
+        actionBtn.style.display = "block";
+    }
+
+    // 4. Init Camera
+    const faceMesh = new FaceMesh({locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`});
+    faceMesh.setOptions({ maxNumFaces: 1, refineLandmarks: true, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+    faceMesh.onResults(onResults);
+
+    const camera = new Camera(videoElement, {
+        onFrame: async () => { await faceMesh.send({image: videoElement}); },
+        width: 640, height: 480
+    });
+    camera.start();
+</script>
+{% endblock %}

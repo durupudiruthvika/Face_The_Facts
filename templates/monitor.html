@@ -1,0 +1,134 @@
+{% extends "layout.html" %}
+{% block content %}
+<!-- FOCUS FOG OVERLAY -->
+<div id="fogOverlay" class="fog-overlay-container">
+    <h1 class="fog-text"><i class="bi bi-eye-slash-fill"></i> Focus Lost...</h1>
+    <p class="h4 text-muted">Look back at the screen to reconnect.</p>
+</div>
+
+<div class="container">
+    <div class="row text-center mb-3">
+        <div class="col">
+            <h2>🔴 Live Wellbeing Monitor</h2>
+            <p class="text-muted">Ensure your face is well-lit. Blinks are detected automatically.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Video Feed Column -->
+        <div class="col-md-8 position-relative">
+            <div class="card">
+                <div class="card-body p-0 text-center bg-black position-relative">
+                    <!-- Video (Hidden) -->
+                    <video id="inputVideo" class="d-none" autoplay playsinline></video>
+                    <!-- Canvas (Visible) -->
+                    <canvas id="outputCanvas" width="640" height="480" style="max-width: 100%;"></canvas>
+                    
+                    <!-- NEW: Ergonomic Alerts Overlay -->
+                    <div id="ergoOverlay" class="position-absolute top-0 start-0 w-100 p-3 d-none flex-column align-items-center" style="z-index: 10;">
+                        <div id="postureAlert" class="badge bg-warning text-dark mb-2 shadow-lg p-2 fs-6 d-none">
+                            <i class="bi bi-person-up"></i> Sit Up Straight!
+                        </div>
+                        <div id="distanceAlert" class="badge bg-danger mb-2 shadow-lg p-2 fs-6 d-none">
+                            <i class="bi bi-arrows-move"></i> Too Close to Screen!
+                        </div>
+                        <div id="lightAlert" class="badge bg-info text-dark mb-2 shadow-lg p-2 fs-6 d-none">
+                            <i class="bi bi-lightbulb-fill"></i> Low Light Detected
+                        </div>
+                    </div>
+
+                    <!-- Error Overlay -->
+                    <div id="errorOverlay" class="position-absolute top-50 start-50 translate-middle text-danger bg-white p-3 d-none" style="z-index: 20;">
+                        <h5 id="errorMessage">Camera Error</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Stats Column -->
+        <div class="col-md-4">
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white">Session Stats</div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Left: Face Stats -->
+                        <div class="col-6">
+                            <h5>Blinks: <span id="blinkCount">0</span></h5>
+                            <h5>EAR: <span id="earValue">0.00</span></h5>
+                        </div>
+                        <!-- Right: Input Stats -->
+                        <div class="col-6 border-start">
+                            <h6 class="mb-2">Keys: <span id="keysDisplay" class="text-primary fw-bold">0</span></h6>
+                            <h6 class="mb-0">Mouse: <span id="mouseDisplay" class="text-primary fw-bold">0</span></h6>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="text-center">
+                        <h5>Status: <span id="statusBadge" class="badge bg-success">Calm</span></h5>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Zen Mode Button -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <button id="zenBtn" class="btn btn-outline-success w-100 fw-bold">
+                        🧘 Enter Zen Mode
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stop Button -->
+            <div class="card">
+                <div class="card-body">
+                    <button id="stopBtn" class="btn btn-danger w-100">⏹ End Session & Generate Report</button>
+                </div>
+            </div>
+            
+            <div id="loadingMessage" class="alert alert-warning mt-3">
+                ⏳ Loading AI Models... (Check Camera Permissions)
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ZEN MODE OVERLAY -->
+<div id="zenOverlay" class="zen-overlay">
+    <div class="breathing-circle"></div>
+    <h2 id="zenText" class="zen-text">Inhale...</h2>
+    <p class="mt-4 text-white-50">Follow the rhythm to reduce stress</p>
+    
+    <button id="closeZenBtn" class="btn btn-outline-light rounded-pill mt-5 px-5">
+        I feel better (Close)
+    </button>
+</div>
+
+<!-- Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+
+<!-- Debug Script -->
+<script>
+    window.onload = function() {
+        if (typeof FaceMesh === 'undefined' || typeof Camera === 'undefined') {
+            alert("ERROR: MediaPipe libraries failed to load. \n\n1. Check your internet connection.\n2. Disable AdBlockers.\n3. Check Console (F12).");
+            document.getElementById('loadingMessage').innerText = "❌ Error: Libraries not loaded.";
+            document.getElementById('loadingMessage').className = "alert alert-danger mt-3";
+        }
+    };
+</script>
+
+<!-- Inject User Threshold -->
+<script>
+    // If user is calibrated, use their value. Otherwise use default 0.26
+    const USER_EAR_THRESHOLD = {{ current_user.calibration_threshold if current_user.calibration_threshold else 0.26 }};
+</script>
+
+<!-- Custom Logic -->
+<script src="{{ url_for('static', filename='js/cv_monitor.js') }}"></script>
+{% endblock %}

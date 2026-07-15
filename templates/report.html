@@ -1,0 +1,160 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        
+        <!-- Download Controls (Visible only on screen) -->
+        <div class="col-md-9 text-end mb-3">
+            <button onclick="downloadPDF()" class="btn btn-danger shadow-sm">
+                <i class="bi bi-file-earmark-pdf-fill"></i> Download PDF
+            </button>
+        </div>
+
+        <div class="col-md-9">
+            <!-- ID 'printableArea' is what gets saved to PDF -->
+            <div id="printableArea" class="card shadow-lg border-0 rounded-4">
+                
+                <!-- Header -->
+                <div class="card-header bg-primary text-white text-center p-4 border-bottom-0 rounded-top-4">
+                    <h2 class="fw-bold mb-1">✨ Wellbeing Analysis</h2>
+                    <p class="mb-0 opacity-75">{{ session.start_time.strftime('%B %d, %Y • %I:%M %p') }}</p>
+                    <p class="small mt-2">User: {{ current_user.username }} | ID: #{{ session.id }}</p>
+                </div>
+                
+                <div class="card-body p-5">
+                    
+                    <!-- ROW 1: Physiological Stats -->
+                    <h6 class="text-uppercase text-muted fw-bold mb-3 small ls-1">
+                        <i class="bi bi-person-bounding-box me-1"></i> Physiological Metrics
+                    </h6>
+                    <div class="row text-center mb-4">
+                        <div class="col-4 border-end">
+                            <h3 class="text-primary fw-bold">{{ session.total_blinks }}</h3>
+                            <small class="text-muted">Total Blinks</small>
+                        </div>
+                        <div class="col-4 border-end">
+                            <h3 class="text-success fw-bold">
+                                {{ ((session.end_time - session.start_time).seconds / 60)|round(1) }}m
+                            </h3>
+                            <small class="text-muted">Duration</small>
+                        </div>
+                        <div class="col-4">
+                            <h3 class="text-warning fw-bold">
+                                {{ session.avg_ear|round(2) }}
+                            </h3>
+                            <small class="text-muted">Avg Eye Openness</small>
+                        </div>
+                    </div>
+
+                    <hr class="my-4 opacity-10">
+
+                    <!-- ROW 2: Work Patterns -->
+                    <h6 class="text-uppercase text-muted fw-bold mb-3 small ls-1">
+                        <i class="bi bi-laptop me-1"></i> Work Patterns
+                    </h6>
+                    <div class="row text-center mb-4">
+                        <div class="col-6 border-end">
+                            <div class="d-flex flex-column align-items-center">
+                                <i class="bi bi-keyboard fs-4 text-secondary mb-1"></i>
+                                <h4 class="text-dark fw-bold mb-0">
+                                    {{ session.keyboard_activity|default(0) }}
+                                </h4>
+                                <small class="text-muted">Keystrokes</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex flex-column align-items-center">
+                                <i class="bi bi-mouse2 fs-4 text-secondary mb-1"></i>
+                                <h4 class="text-dark fw-bold mb-0">
+                                    {{ session.mouse_activity|default(0) }} <span class="fs-6 text-muted fw-normal">px</span>
+                                </h4>
+                                <small class="text-muted">Mouse Distance</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4 opacity-10">
+
+                    <!-- AI CONTENT -->
+                    <h6 class="text-uppercase text-muted fw-bold mb-3 small ls-1">
+                        <i class="bi bi-stars me-1"></i> AI Coach Insights
+                    </h6>
+                    <div class="ai-report-content p-4 bg-light rounded-3 border">
+                        {{ report_html | safe }}
+                    </div>
+
+                    <!-- CHART SECTION -->
+                    <div class="row mt-5">
+                        <div class="col-md-12">
+                            <h5 class="fw-bold mb-3">📈 Blink Timeline</h5>
+                            <!-- Canvas for Chart -->
+                            <canvas id="sessionChart" width="400" height="120"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Footer for PDF -->
+                    <div class="mt-5 text-center text-muted small">
+                        <p>Generated by FaceTheFacts AI • Private & Confidential</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4 mb-5">
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline-dark px-4 rounded-pill">
+                    &larr; Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Libraries -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- HTML2PDF Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+<script>
+    // 1. Render Chart
+    const chartData = {{ chart_data | tojson }};
+    const ctx = document.getElementById('sessionChart').getContext('2d');
+    const myChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: chartData.timestamps,
+            datasets: [{
+                label: 'Blinks per Snapshot',
+                data: chartData.blinks,
+                borderColor: '#1abc9c', 
+                backgroundColor: 'rgba(26, 188, 156, 0.1)',
+                tension: 0.4,
+                fill: true,
+                pointRadius: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            animation: false, // Disable animation for better PDF rendering
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { display: false } },
+                y: { beginAtZero: true }
+            }
+        }
+    });
+
+    // 2. PDF Download Logic
+    function downloadPDF() {
+        const element = document.getElementById('printableArea');
+        const opt = {
+            margin:       0.5,
+            filename:     'FaceTheFacts_Report_{{ session.start_time.strftime("%Y-%m-%d") }}.pdf',
+            image:        { type: 'jpeg', quality: 0.98 },
+            html2canvas:  { scale: 2 },
+            jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
+        };
+        
+        // Generate PDF
+        html2pdf().set(opt).from(element).save();
+    }
+</script>
+{% endblock %}

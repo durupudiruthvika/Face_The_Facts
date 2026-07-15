@@ -1,0 +1,77 @@
+{% extends "layout.html" %}
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2 class="fw-bold text-dark">📊 Full Session History</h2>
+            <p class="text-muted">A complete record of your wellbeing monitoring sessions.</p>
+        </div>
+    </div>
+
+    <div class="card shadow border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-uppercase small fw-bold">
+                        <tr>
+                            <th class="ps-4 py-3">Date & Time</th>
+                            <th class="py-3">Duration</th>
+                            <th class="py-3">Blinks</th>
+                            <th class="py-3">AI Status</th>
+                            <th class="py-3 text-end pe-4">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if sessions %}
+                            {% for sess in sessions %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary bg-opacity-10 text-primary rounded p-2 me-3">
+                                            <i class="bi bi-calendar-event-fill"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold text-dark">{{ sess.start_time.strftime('%B %d, %Y') }}</div>
+                                            <small class="text-muted">{{ sess.start_time.strftime('%I:%M %p') }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if sess.end_time %}
+                                        <span class="badge bg-light text-dark border">
+                                            {{ ((sess.end_time - sess.start_time).seconds / 60)|round(1) }} min
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Incomplete</span>
+                                    {% endif %}
+                                </td>
+                                <td class="fw-bold text-secondary">{{ sess.total_blinks }}</td>
+                                <td>
+                                    {% if sess.gemini_report %}
+                                        <span class="badge bg-success rounded-pill px-3">Generated</span>
+                                    {% else %}
+                                        <span class="badge bg-warning text-dark rounded-pill px-3">Processing</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <!-- LINK TO VIEW REPORT -->
+                                    <a href="{{ url_for('view_report', session_id=sess.id) }}" class="btn btn-sm btn-primary shadow-sm">
+                                        <i class="bi bi-eye-fill"></i> View Report
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">
+                                    No history found. Start your first session!
+                                </td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

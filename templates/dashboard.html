@@ -1,0 +1,159 @@
+{% extends "layout.html" %}
+{% block content %}
+
+<!-- 1. Hero & Plant Section -->
+<div class="row mb-5">
+    <!-- Welcome Text -->
+    <div class="col-lg-8 d-flex flex-column justify-content-center mb-4 mb-lg-0">
+        <div class="bg-white p-5 rounded-4 shadow-sm h-100 d-flex flex-column justify-content-center">
+            <h1 class="display-6 fw-bold" style="color: #2c3e50;">
+                Hello, {{ current_user.username }}! 👋
+            </h1>
+            <p class="text-muted lead mb-4">
+                Your digital wellbeing garden is looking 
+                <span class="fw-bold text-{{ 'success' if plant_health > 50 else 'warning' }}">{{ plant_status|lower }}</span> today.
+            </p>
+            <div>
+                <a href="{{ url_for('monitor') }}" class="btn btn-primary btn-lg px-4 py-2 shadow-lg rounded-pill">
+                    <i class="bi bi-camera-video-fill me-2"></i> Start Live Prediction
+                </a>
+                <a href="{{ url_for('gestures') }}" class="btn btn-outline-secondary rounded-pill">
+    <i class="bi bi-hand-index-thumb"></i> Try Gesture Control
+</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- THE PLANT CARD -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-lg rounded-4 plant-card h-100 text-center">
+            <div class="card-header bg-transparent border-0 pt-4">
+                <h5 class="fw-bold text-secondary mb-0">Your Focus Plant</h5>
+            </div>
+            <div class="card-body plant-container">
+                <!-- Using Bootstrap Icons as the Plant parts -->
+                {% if plant_status == "Radiant" %}
+                    <i class="bi bi-flower1 plant-svg plant-radiant display-1"></i>
+                {% elif plant_status == "Healthy" %}
+                    <i class="bi bi-flower2 plant-svg plant-healthy display-1"></i>
+                {% elif plant_status == "Thirsty" %}
+                    <i class="bi bi-flower3 plant-svg plant-thirsty display-1"></i>
+                {% else %}
+                    <i class="bi bi-flower3 plant-svg plant-withered display-1"></i>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-transparent border-0 pb-4">
+                <div class="progress mb-2" style="height: 10px;">
+                    <div class="progress-bar bg-{{ 'success' if plant_health > 50 else 'warning' }}" 
+                         role="progressbar" style="width: {{ plant_health }}%"></div>
+                </div>
+                <div class="d-flex justify-content-between small text-muted fw-bold">
+                    <span>Health: {{ plant_health }}%</span>
+                    <span>Status: {{ plant_status }}</span>
+                </div>
+                
+                {% if plant_health < 50 %}
+                <div class="mt-3">
+                    <small class="d-block text-danger mb-2">Your plant needs care!</small>
+                    <a href="{{ url_for('monitor') }}" class="btn btn-sm btn-info text-white rounded-pill btn-water px-3">
+                        <i class="bi bi-droplet-fill"></i> Hydrate (Start Session)
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Recent Activity & To-Dos -->
+<div class="row">
+    <!-- LEFT COLUMN: Recent Activity -->
+    <div class="col-lg-8 mb-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold text-secondary">Recent Sessions</h4>
+            <a href="{{ url_for('history') }}" class="text-decoration-none small fw-bold">View Full History &rarr;</a>
+        </div>
+
+        {% if sessions %}
+            <div class="row">
+                {% for sess in sessions %}
+                <div class="col-md-4 mb-3">
+                    <div class="card h-100 border-0 shadow-sm hover-card" style="transition: transform 0.2s;">
+                        <div class="card-body">
+                            <h6 class="text-muted small mb-2">
+                                <i class="bi bi-calendar3"></i> {{ sess.start_time.strftime('%b %d') }}
+                            </h6>
+                            <h5 class="fw-bold text-dark">{{ sess.total_blinks }} Blinks</h5>
+                            
+                            {% if sess.gemini_report %}
+                                <span class="badge bg-success bg-opacity-10 text-success mb-2">
+                                    <i class="bi bi-check-circle"></i> Report Ready
+                                </span>
+                            {% else %}
+                                <span class="badge bg-secondary bg-opacity-10 text-secondary mb-2">Pending</span>
+                            {% endif %}
+
+                            <div class="mt-2 pt-2 border-top">
+                                <small class="text-muted d-block">
+                                    <i class="bi bi-stopwatch"></i> Duration: 
+                                    {{ ((sess.end_time - sess.start_time).seconds / 60)|round(1) if sess.end_time else 0 }}m
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="alert alert-light border-dashed text-center py-5">
+                <i class="bi bi-activity fs-1 text-muted opacity-50"></i>
+                <p class="mt-2 text-muted">No sessions yet. Start one to grow your plant!</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- RIGHT COLUMN: Priority To-Do List -->
+    <div class="col-lg-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="fw-bold text-secondary">Up Next</h4>
+            <a href="{{ url_for('todo_list') }}" class="btn btn-sm btn-outline-dark rounded-pill">
+                <i class="bi bi-plus-lg"></i> Manage
+            </a>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                {% if todos %}
+                    <ul class="list-group list-group-flush rounded-3">
+                        {% for todo in todos %}
+                        <li class="list-group-item py-3 px-4 d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="d-block fw-semibold text-dark">{{ todo.task }}</span>
+                                <small class="text-danger fw-bold" style="font-size: 0.75rem;">
+                                    <i class="bi bi-clock"></i> Due: {{ todo.due_date }}
+                                </small>
+                            </div>
+                            <a href="{{ url_for('toggle_todo', id=todo.id) }}" class="btn btn-sm btn-outline-secondary rounded-circle">
+                                <i class="bi bi-check-lg"></i>
+                            </a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-center p-4">
+                        <i class="bi bi-cup-hot fs-3 text-muted opacity-50"></i>
+                        <p class="text-muted mb-0 mt-2">No urgent tasks! 🎉</p>
+                        <a href="{{ url_for('todo_list') }}" class="small text-decoration-none">Add a task</a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-card:hover { transform: translateY(-5px); cursor: pointer; }
+    .border-dashed { border: 2px dashed #e0e0e0; border-radius: 10px; }
+</style>
+
+{% endblock %}
